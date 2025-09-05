@@ -1,0 +1,4 @@
+1. write server side + hosting
+2. webui
+3. settings
+4. setup script

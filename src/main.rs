@@ -1,4 +1,4 @@
-use warp::Filter;
+use warp::*;
 
 #[tokio::main]
 async fn main() {
@@ -6,7 +6,17 @@ async fn main() {
         .and(warp::get())
         .map(move || warp::reply::html(include_str!("guh.html")));
 
-    warp::serve(site)
+    /*let api_upload = warp::path!("api" / "v1" / "upload")
+        .and(warp::post())
+        .and(//i need to have this allow file uploads)
+        .and_then(file_upload); */
+    
+
+    let route = site;
+        //.or(dir);
+        //.or(api_upload);
+
+    warp::serve(route)
         .run(([0, 0, 0, 0], 3000))
         .await;
 }
