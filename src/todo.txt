@@ -1,4 +1,8 @@
-1. write server side + hosting
+1. write server side + file hosting
 2. webui
 3. settings
 4. setup script
+5. make more html for diff places
+6. test if i can js use the 1 line of code for multiple html files
+7. make js / rs code to create new playlists
+8. handle music uploads (DO AFTER FILE HOSTING)
