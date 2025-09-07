@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>miau</title>
+    <style>
+        html, body {
+            background-color: #635D64;
+            margin: 0;
+            border: 0;
+            padding: 0;
+        }
+
+        #page {
+            background-color: rgba(23, 23, 23, 0.9);
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="page">
+        <p>owo</p>
+        <input type="text" id="woah">
+
+        <p>password box test</p>
+        <input type="password" name="miau" id="password">
+
+        <a href="./settings.html">Settings</a>
+    </div>
+
+     <script>
+        //also writing all the code in here bcs i hate myself and its easier
+        const woah = document.getElementById("woah");
+        const uh = document.getElementById("password");
+
+        woah.addEventListener("keypress", (event) => {
+            if(event.key === "Enter") {
+                fetch("") //TODO : MOVE TO SETTINGS PAGE
+                console.log(woah.value);
+            }
+        });
+
+        uh.addEventListener("keypress", (event) => {
+            if(event.key === "Enter") {
+                //TODO : fetch request this off into env file
+            }
+        });
+    </script>
+</body>
+</html>

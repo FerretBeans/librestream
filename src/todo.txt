@@ -6,3 +6,6 @@
 6. test if i can js use the 1 line of code for multiple html files
 7. make js / rs code to create new playlists
 8. handle music uploads (DO AFTER FILE HOSTING)
+9. to add storage location
+10. clone html files from build into exe source (i dont need this, this is literally just if ur weird and want to build it urself)
+11. add replies to requests so i can create logs inside the webui
