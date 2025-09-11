@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 tokio = { version = "1.47.1", features = ["full"] }
 warp = { version = "0.4.2", features = ["server", "multipart"]}
-serde = { version = "1.0.219"}
+serde = { version = "1.0.219", features = ["derive"]}
 serde_json = { version = "1.0.143" }
 dotenv = { version = "0.15.0" }
 colored = { version = "3.0.0" }

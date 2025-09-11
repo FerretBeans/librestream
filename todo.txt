@@ -11,10 +11,11 @@
 11. add replies to requests so i can create logs inside the webui
 12. write code to force if not logged in to go to /login ✅
 13. make sure to make it so only logged in users can do stuff unless stated otherwise in settings
-14. use env vars 
+14. use env vars ✅
 15. add metadata editing to music 
 16. add custom headers with env vars so i can use auth for users
 17. add a visualiser (request by jay)
 18. add funny cover scroll wheel thingy :3
 19. user tools
 20. admin key
+21. make it so cant double a user

@@ -1,0 +1,7 @@
+2025-09-11 22:21:24 INFO librestream Started logging
+2025-09-11 22:21:24 INFO librestream Created [90mdata folder[0m
+2025-09-11 22:21:24 INFO librestream Created [93msettings.json[0m
+2025-09-11 22:21:24 INFO librestream Created [36maccounts.env[0m
+2025-09-11 22:21:24 INFO librestream Data loaded
+2025-09-11 22:21:24 INFO librestream Loaded the [94menviornment file[0m
+2025-09-11 22:21:24 INFO librestream Running on port 3000

@@ -1,16 +1,23 @@
-//pub mod usercreation;
+pub mod usercreation;
 
 use log::*;
+use serde::Deserialize;
 use serde_json::*;
 use colored::*;
 use warp::{filters::multipart::{FormData, Part}, reject::Rejection, reply::Reply, Filter};
 use multer::bytes::{Buf, BufMut};
-use futures::TryStreamExt;
+use futures::{future::ok, TryStreamExt};
 use dotenv;
 use env_logger::*;
 use ftail::Ftail;
 
-//use usercreation::*;
+use usercreation::*;
+
+#[derive(Deserialize)]
+struct Userdata {
+    un: String,
+    pw: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -27,10 +34,6 @@ async fn main() {
         .init();
 
     info!("Started logging");
-
-    /*env_logger::Builder::new()
-        .filter_level(LevelFilter::Info)
-        .init();*/
 
     //Run check files to check if any major files exist
     check_files();
@@ -63,15 +66,17 @@ async fn main() {
         .and(warp::multipart::form().max_length(u64::MAX))
         .and_then(file_upload);
 
-    /*let user_creation = warp::path!("api" / "v1" / "usercreate")
+    let user_creation = warp::path!("api" / "v1" / "usercreate")
         .and(warp::post())
-        .and_then(createUser({}, {}));*/
+        .and(warp::body::json())
+        .and_then(user_data);
 
     //actually allow the sites to be accessed
     let route = site
         .or(login_page)
         .or(blocked_page)
         .or(settings)
+        .or(user_creation)
         .or(api_upload);
 
     info!("Running on port {}", port);
@@ -193,7 +198,13 @@ fn check_files() -> std::io::Result<()> {
     Ok(())
 }
 
+async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    createUser(body.un.clone(), body.pw);
+    let message = format!("User {} has been created", body.un);
+    Ok(warp::reply::with_status(message, warp::http::StatusCode::ACCEPTED))
+}
+
 fn run_dotenv() {
     dotenv::from_path("./datafiles/accounts.dev").ok();
-    info!("Loaded the {}", "enviornmental file".bright_blue());
+    info!("Loaded the {}", "enviornment file".bright_blue());
 }

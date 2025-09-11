@@ -1,18 +1,25 @@
+use futures::io;
 use uuid::Uuid;
 use random_string::*;
 use log::*;
-use std::io;
+use std::{fs::OpenOptions, io::Write};
 
 static CHARSET: &str = "-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_";
 
-pub fn createUser(username: String, password: String) {
+pub fn createUser(username: String, password: String) -> io::Result<()> {
     let id = Uuid::new_v4();
     let api_key = generate(40, CHARSET);
+
+    let mut file = OpenOptions::new()
+        .append(true)
+        .open("./datafiles/accounts.env")?;
     
-    writeln!("{}USER: {}", "{} {}", username, username);
-    writeln!("");
-    writeln!("");
-    writeln!("");
+    writeln!(file, "{}USER={}", username, username);
+    writeln!(file, "{}PASSWORD={}", username, password);
+    writeln!(file, "{}ID={}", username, id);
+    writeln!(file, "{}APIKEY={}", username, api_key);
+
+    Ok(())
 }
 
 pub fn deleteUser() {
