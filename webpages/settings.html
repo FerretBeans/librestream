@@ -6,6 +6,17 @@
     <title>web2</title>
 </head>
 <body>
-    
+    <p>admin password</p>
+    <input type="password" name="idkyet" id="adminpassword">
+
+    <script>
+        const woah = document.getElementById("adminpassword");
+
+        woah.addEventListener("keypress", (event) => {
+            if(event.key === "Enter") {
+                fetch("")
+            }
+        });
+    </script>
 </body>
 </html>

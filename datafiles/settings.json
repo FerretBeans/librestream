@@ -1,1 +1,9 @@
-{"music_dir":"C:/music","server_port":3000,"view_without_login":false,"listen_without_login":false,"require_login":true}
+{
+  "allow_create_user": false,
+  "listen_without_login": false,
+  "music_dir": "/var/music",
+  "require_login": true,
+  "server_port": 3000,
+  "upload_require_login": true,
+  "view_without_login": false
+}
