@@ -20,3 +20,6 @@ random-string = { version = "1.1.0" }
 env_logger = { version = "0.11.8" }
 chrono = { version = "0.4.42" }
 ftail = { version = "0.3.0" }
+dotenvy = { version = "0.15.7" }
+multitag = { version = "0.4.2" }
+reqwest = { version = "0.12.23" }

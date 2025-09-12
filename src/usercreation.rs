@@ -1,8 +1,11 @@
-use futures::io;
+use colored::Colorize;
+use futures::io::{self};
 use uuid::Uuid;
 use random_string::*;
 use log::*;
-use std::{fs::OpenOptions, io::Write};
+use warp::reply::with_status;
+use std::fs::{read_to_string, OpenOptions};
+use std::io::Write;
 
 static CHARSET: &str = "-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_";
 
@@ -11,26 +14,56 @@ pub fn createUser(username: String, password: String) -> io::Result<()> {
     let api_key = generate(40, CHARSET);
 
     let mut file = OpenOptions::new()
+        .write(true)
         .append(true)
         .open("./datafiles/accounts.env")?;
-    
-    writeln!(file, "{}USER={}", username, username);
-    writeln!(file, "{}PASSWORD={}", username, password);
-    writeln!(file, "{}ID={}", username, id);
-    writeln!(file, "{}APIKEY={}", username, api_key);
 
+    let fileread = read_to_string("./datafiles/accounts.env").unwrap();
+    let usernamekey = format!("{}USER={}", username, username);
+
+    let mut userexists = false;
+
+    for line in fileread.lines() {
+        if line == usernamekey {
+            userexists = true;
+            with_status("User already exists!", warp::http::StatusCode::CONFLICT);
+            warn!("User already exists");
+            break;
+        } 
+    }
+
+    if !userexists {
+        info!("User {} has been created", username.bright_purple());
+        writeln!(file, "{}USER={}", username, username)?;
+        writeln!(file, "{}PASSWORD={}", username, password)?;
+        writeln!(file, "{}ID={}", username, id)?;
+        writeln!(file, "{}APIKEY={}", username, api_key)?;
+        writeln!(file, "{}ISADMIN=FALSE", username)?;
+    }
+    
+    reload_dotenv();
     Ok(())
 }
 
-pub fn deleteUser() {
-    //TODO : figure out to delete, as i want to delete uuid and api key but are random gend
+pub fn deleteUser(username: String, password: String) {
+    //TODO : figrued out as i can just named them all {username}user {username}password etc but u cant see that :3 so when u do, just read every line that includes {username}
+
+
+    reload_dotenv();
 }
 
-pub fn updateUser() {
-    //TODO : allow all users to change username and pw
+pub fn updateUser(username: String, newusername: String, password: String, oldpassword: String) {
+    //TODO : allow all users to change username and pw get {username}
+
+
+    reload_dotenv();
 }
 
 //not really used outside the thingy
 fn reload_dotenv() {
     //reload the env var
+    match dotenvy::from_filename_override("./datafiles/accounts.env"){
+        Ok(_) => info!("Environment file reloaded"),
+        Err(e) => error!("Environment file didn't reload:\n {}", e)
+    }
 }

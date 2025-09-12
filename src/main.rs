@@ -1,17 +1,21 @@
 pub mod usercreation;
+pub mod metadataedit;
 
-use log::*;
+use log::{error, info, warn, LevelFilter};
+use reqwest::Error;
 use serde::Deserialize;
 use serde_json::*;
 use colored::*;
-use warp::{filters::multipart::{FormData, Part}, reject::Rejection, reply::Reply, Filter};
-use multer::bytes::{Buf, BufMut};
-use futures::{future::ok, TryStreamExt};
+use warp::{filters::{ext::get, multipart::{FormData, Part}}, reject::Rejection, reply::Reply, Filter};
+use multer::bytes::BufMut;
+use futures::TryStreamExt;
 use dotenv;
-use env_logger::*;
 use ftail::Ftail;
 
 use usercreation::*;
+use metadataedit::*;
+
+// struct metadata {}
 
 #[derive(Deserialize)]
 struct Userdata {
@@ -38,6 +42,9 @@ async fn main() {
     //Run check files to check if any major files exist
     check_files();
 
+    //USE HERE FOR TESTING FUNCTIONS
+    album_metadata("./DOGMATICA.flac".to_string(), None);
+
     //Inject .env file
     run_dotenv();
 
@@ -49,6 +56,10 @@ async fn main() {
     let portu16 = u16::try_from(portu64).expect("Couldn't convert to u16");
     
     //Webui pages
+    let files = warp::fs::dir("./webpages");
+
+    let settingspath = warp::fs::file("./datafiles/settings.json");
+
     let site = warp::path::end()
         .and(warp::fs::file("./webpages/index.html"));
 
@@ -77,6 +88,8 @@ async fn main() {
         .or(blocked_page)
         .or(settings)
         .or(user_creation)
+        .or(files)
+        .or(settingspath)
         .or(api_upload);
 
     info!("Running on port {}", port);
