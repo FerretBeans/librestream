@@ -16,9 +16,9 @@ pub fn createUser(username: String, password: String) -> io::Result<()> {
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
-        .open("./datafiles/accounts.env")?;
+        .open("./data/accounts.env")?;
 
-    let fileread = read_to_string("./datafiles/accounts.env").unwrap();
+    let fileread = read_to_string("./data/accounts.env").unwrap();
     let usernamekey = format!("{}USER={}", username, username);
 
     let mut userexists = false;
@@ -39,6 +39,9 @@ pub fn createUser(username: String, password: String) -> io::Result<()> {
         writeln!(file, "{}ID={}", username, id)?;
         writeln!(file, "{}APIKEY={}", username, api_key)?;
         writeln!(file, "{}ISADMIN=FALSE", username)?;
+    } else {
+        warn!("user {} still exists", username.bright_purple());
+        warp::http::StatusCode::CONFLICT;
     }
     
     reload_dotenv();
@@ -62,7 +65,7 @@ pub fn updateUser(username: String, newusername: String, password: String, oldpa
 //not really used outside the thingy
 fn reload_dotenv() {
     //reload the env var
-    match dotenvy::from_filename_override("./datafiles/accounts.env"){
+    match dotenvy::from_filename_override("./data/accounts.env"){
         Ok(_) => info!("Environment file reloaded"),
         Err(e) => error!("Environment file didn't reload:\n {}", e)
     }

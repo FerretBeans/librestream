@@ -5,12 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>web2</title>
+    <link rel="favicon" href="./files/js/favicon.ico">
+    <style>
+        html, body {
+            background-color: #635D64;
+            margin: 0;
+            border: 0;
+            padding: 0;
+        }
+
+        #wrapper {
+            background-color: rgba(23, 23, 23, 0.9);
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        #logs {
+            /* border: 1px solid black; */
+            width: 30%;
+            height: 250px;
+            resize: none;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
-    <p>admin password</p>
-    <input type="password" name="idkyet" id="adminpassword">
+    <div id="wrapper">
 
-    <script src="./settings.js"></script>
-    <script src="./block.js"></script>
+        
+        <textarea readonly id="logs"></textarea>
+
+        <p>admin password</p>
+        <input type="password" name="idkyet" id="adminpassword">
+    </div>
+
+    <script src="./files/js/settings.js"></script>
+    <script src="./files/js/block.js"></script>
 </body>
 </html>

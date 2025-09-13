@@ -54,11 +54,21 @@ async fn main() {
     let port = &getport["server_port"];
     let portu64 = port.as_u64().expect("Port must be between 1 - 65535");
     let portu16 = u16::try_from(portu64).expect("Couldn't convert to u16");
-    
-    //Webui pages
-    let files = warp::fs::dir("./webpages");
 
-    let settingspath = warp::fs::file("./datafiles/settings.json");
+    //Webui pages
+    let blocked = warp::path("data")
+        .and(warp::any())
+        .map(|| warp::reply::with_status("Forbidden", warp::http::StatusCode::FORBIDDEN));
+
+    let files = warp::path("files")
+        .and(warp::any())
+        .and(warp::fs::dir("./webpages"));
+    
+    let logs = warp::path("logs")
+        .and(warp::fs::dir("./logs"));
+
+    let settingsfile = warp::path!("data")
+    .and(warp::fs::dir("./datafiles/settings.json"));
 
     let site = warp::path::end()
         .and(warp::fs::file("./webpages/index.html"));
@@ -83,13 +93,15 @@ async fn main() {
         .and_then(user_data);
 
     //actually allow the sites to be accessed
-    let route = site
+    let route = blocked
+        .or(site)
+        .or(logs)
         .or(login_page)
         .or(blocked_page)
         .or(settings)
+        .or(settingsfile)
         .or(user_creation)
         .or(files)
-        .or(settingspath)
         .or(api_upload);
 
     info!("Running on port {}", port);
@@ -178,6 +190,8 @@ async fn file_upload(form: FormData) -> std::result::Result<impl Reply, Rejectio
 
 //Create the folder / check every time it is run for satefy c:
 fn check_files() -> std::io::Result<()> {
+    
+
     let settings = json!({
         "music_dir": "/var/music",
         "server_port": 3000,
@@ -201,8 +215,14 @@ fn check_files() -> std::io::Result<()> {
         info!("Created {}", "settings.json".bright_yellow());
     }
 
-    if std::fs::File::open("./datafiles/accounts.env").is_err() {
-        std::fs::File::create("./datafiles/accounts.env")?;
+    if std::fs::read_dir("./data").is_err() {
+        std::fs::DirBuilder::new().create("./data");
+        assert!(std::fs::metadata("./data").unwrap().is_dir());
+        info!("Created {}", "data folder".truecolor(100, 100, 100));
+    }
+
+    if std::fs::File::open("./data/accounts.env").is_err() {
+        std::fs::File::create("./data/accounts.env")?;
         info!("Created {}", "accounts.env".cyan());
     }
 
@@ -218,6 +238,6 @@ async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp
 }
 
 fn run_dotenv() {
-    dotenv::from_path("./datafiles/accounts.dev").ok();
+    dotenv::from_path("./data/accounts.dev").ok();
     info!("Loaded the {}", "enviornment file".bright_blue());
 }
