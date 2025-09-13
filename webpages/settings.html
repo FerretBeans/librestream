@@ -12,6 +12,7 @@
             margin: 0;
             border: 0;
             padding: 0;
+            color: white;
         }
 
         #wrapper {
@@ -27,17 +28,35 @@
             height: 250px;
             resize: none;
             white-space: nowrap;
+            color: white;
+            background-color: rgb(39, 39, 39);
+        }
+
+        #kofi {
+            width: 5%;
+            height: auto;
+        }
+
+        #button {
+            width: 2%;
+            height: auto;
         }
     </style>
 </head>
 <body>
     <div id="wrapper">
-
+        <div id="header">
+            
+        </div>
         
         <textarea readonly id="logs"></textarea>
 
         <p>admin password</p>
         <input type="password" name="idkyet" id="adminpassword">
+
+        <div id="footer">
+            <button id="button">Consider supporting me on <br><img id="kofi" src="./files/img/kofi_logo.png"></button>
+        </div>
     </div>
 
     <script src="./files/js/settings.js"></script>
