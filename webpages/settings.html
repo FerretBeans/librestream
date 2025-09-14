@@ -7,12 +7,25 @@
     <title>web2</title>
     <link rel="favicon" href="./files/js/favicon.ico">
     <style>
+        @font-face {
+            font-family: oxygen;
+            src: url("./files/fonts/Oxygen/Oxygen-Regular.ttf") format("truetype");
+        }
+
         html, body {
             background-color: #635D64;
             margin: 0;
             border: 0;
             padding: 0;
             color: white;
+            font-family: oxygen;
+        }
+
+        #header {
+            border: 3px solid white;
+            border-radius: 500px;
+            height: 3%;
+            width: 30%;
         }
 
         #wrapper {
@@ -32,30 +45,34 @@
             background-color: rgb(39, 39, 39);
         }
 
-        #kofi {
+        #button {
             width: 5%;
             height: auto;
-        }
-
-        #button {
-            width: 2%;
-            height: auto;
+            font-size: 75%;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0px;
+            cursor: pointer;
+            color: white;
+            font-family: oxygen;
         }
     </style>
 </head>
 <body>
     <div id="wrapper">
         <div id="header">
-            
+            <img src="" alt="userpfp">
         </div>
         
         <textarea readonly id="logs"></textarea>
 
-        <p>admin password</p>
+        <p id="test">admin password</p>
         <input type="password" name="idkyet" id="adminpassword">
 
         <div id="footer">
-            <button id="button">Consider supporting me on <br><img id="kofi" src="./files/img/kofi_logo.png"></button>
+            <form action="https://buymeacoffee.com/ferretbeans" target="_blank" method="get">
+                <button id="button" target="_blank">Consider buying me a coffee?</button>
+            </form>
         </div>
     </div>
 

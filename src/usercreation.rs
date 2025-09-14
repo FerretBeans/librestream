@@ -4,12 +4,12 @@ use uuid::Uuid;
 use random_string::*;
 use log::*;
 use warp::reply::with_status;
-use std::fs::{read_to_string, OpenOptions};
+use std::fs::{read_to_string, File, OpenOptions};
 use std::io::Write;
 
 static CHARSET: &str = "-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_";
 
-pub fn createUser(username: String, password: String) -> io::Result<()> {
+pub fn create_user(username: String, password: String) -> io::Result<()> {
     let id = Uuid::new_v4();
     let api_key = generate(40, CHARSET);
 
@@ -41,23 +41,23 @@ pub fn createUser(username: String, password: String) -> io::Result<()> {
         writeln!(file, "{}ISADMIN=FALSE", username)?;
     } else {
         warn!("user {} still exists", username.bright_purple());
-        warp::http::StatusCode::CONFLICT;
+        with_status("User already exists", warp::http::StatusCode::CONFLICT);
     }
     
     reload_dotenv();
     Ok(())
 }
 
-pub fn deleteUser(username: String, password: String) {
-    //TODO : figrued out as i can just named them all {username}user {username}password etc but u cant see that :3 so when u do, just read every line that includes {username}
+pub fn delete_user(username: String, password: String) {
+    // TODO : figrued out as i can just named them all {username}user {username}password etc but u cant see that :3 so when u do, just read every line that includes {username}
 
 
     reload_dotenv();
 }
 
-pub fn updateUser(username: String, newusername: String, password: String, oldpassword: String) {
-    //TODO : allow all users to change username and pw get {username}
-
+pub fn update_user(username: String, newusername: Option<String>, password: String, oldpassword: Option<String>, profilepicture: Option<&File>) {
+    // TODO : allow all users to change username and pw get {username}
+    // TODO : make user upload profile picture here
 
     reload_dotenv();
 }

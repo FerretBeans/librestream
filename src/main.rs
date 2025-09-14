@@ -1,12 +1,12 @@
 pub mod usercreation;
 pub mod metadataedit;
 
-use log::{error, info, warn, LevelFilter};
-use reqwest::Error;
+use log::{error, info, LevelFilter};
+use multitag::data::Timestamp;
 use serde::Deserialize;
 use serde_json::*;
 use colored::*;
-use warp::{filters::{ext::get, multipart::{FormData, Part}}, reject::Rejection, reply::Reply, Filter};
+use warp::{filters::multipart::{FormData, Part}, reject::Rejection, reply::Reply, Filter};
 use multer::bytes::BufMut;
 use futures::TryStreamExt;
 use dotenv;
@@ -15,7 +15,16 @@ use ftail::Ftail;
 use usercreation::*;
 use metadataedit::*;
 
-// struct metadata {}
+
+// This is for the creation of the objects that allows me to write to the
+// functions easier
+struct metadata<'a> {
+    file: String,
+    title: Option<&'a str>,
+    artist: Option<&'a str>,
+    date: Option<Timestamp>,
+    lyrics: Option<&'a str>
+}
 
 #[derive(Deserialize)]
 struct Userdata {
@@ -26,7 +35,7 @@ struct Userdata {
 #[tokio::main]
 async fn main() {
     if std::fs::read_dir("./logs").is_err() {
-        std::fs::DirBuilder::new().create("./logs");
+        std::fs::DirBuilder::new().create("./logs").expect("Failed to create path");
         assert!(std::fs::metadata("./logs").unwrap().is_dir());
         info!("Created {}", "Logs folder".bright_green());
     }
@@ -35,15 +44,14 @@ async fn main() {
     Ftail::new()
         .console(LevelFilter::Debug)
         .daily_file(std::path::Path::new("logs"), LevelFilter::Debug)
-        .init();
+        .init().expect("Log failed to start");
 
     info!("Started logging");
 
     //Run check files to check if any major files exist
-    check_files();
+    check_files().expect("Failed to check files");
 
     //USE HERE FOR TESTING FUNCTIONS
-    album_metadata("./DOGMATICA.flac".to_string(), None);
 
     //Inject .env file
     run_dotenv();
@@ -56,7 +64,7 @@ async fn main() {
     let portu16 = u16::try_from(portu64).expect("Couldn't convert to u16");
 
     //Webui pages
-    let blocked = warp::path("data")
+    let blocked = warp::path("data") // Prevents the access of accounts.env
         .and(warp::any())
         .map(|| warp::reply::with_status("Forbidden", warp::http::StatusCode::FORBIDDEN));
 
@@ -204,7 +212,7 @@ fn check_files() -> std::io::Result<()> {
 
     //make the json a string to import into a file
     if std::fs::read_dir("./datafiles").is_err() {
-        std::fs::DirBuilder::new().create("./datafiles");
+        std::fs::DirBuilder::new().create("./datafiles").expect("Failed to create path");
         assert!(std::fs::metadata("./datafiles").unwrap().is_dir());
         info!("Created {}", "data folder".truecolor(100, 100, 100));
     }
@@ -216,7 +224,7 @@ fn check_files() -> std::io::Result<()> {
     }
 
     if std::fs::read_dir("./data").is_err() {
-        std::fs::DirBuilder::new().create("./data");
+        std::fs::DirBuilder::new().create("./data").expect("Failed to create path");
         assert!(std::fs::metadata("./data").unwrap().is_dir());
         info!("Created {}", "data folder".truecolor(100, 100, 100));
     }
@@ -232,7 +240,7 @@ fn check_files() -> std::io::Result<()> {
 }
 
 async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp::Rejection> {
-    createUser(body.un.clone(), body.pw);
+    create_user(body.un.clone(), body.pw).expect("Failed to create user");
     let message = format!("User {} has been created", body.un);
     Ok(warp::reply::with_status(message, warp::http::StatusCode::ACCEPTED))
 }
@@ -240,4 +248,8 @@ async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp
 fn run_dotenv() {
     dotenv::from_path("./data/accounts.dev").ok();
     info!("Loaded the {}", "enviornment file".bright_blue());
+}
+
+fn album_options(data: metadata) {
+    // TODO : do checks for if they are none or not
 }
