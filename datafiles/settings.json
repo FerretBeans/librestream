@@ -1,9 +1,9 @@
 {
-  "allow_create_user": false,
+  "allow_create_user": true,
   "listen_without_login": false,
-  "music_dir": "/var/music",
+  "music_dir": "./tempsongstor",
   "require_login": true,
-  "server_port": 3000,
+  "server_port": 22501,
   "upload_require_login": true,
   "view_without_login": false
 }

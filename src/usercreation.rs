@@ -50,14 +50,27 @@ pub fn create_user(username: String, password: String) -> io::Result<()> {
 
 pub fn delete_user(username: String, password: String) {
     // TODO : figrued out as i can just named them all {username}user {username}password etc but u cant see that :3 so when u do, just read every line that includes {username}
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("./data/accounts.env");
+
 
 
     reload_dotenv();
 }
 
-pub fn update_user(username: String, newusername: Option<String>, password: String, oldpassword: Option<String>, profilepicture: Option<&File>) {
+pub fn upload_profile_picture(profilepicture: Option<&File>) {
+    // TODO : handle profile picture and if dont set one have a default
+
+}
+
+pub fn update_user(username: String, newusername: Option<String>, password: String, oldpassword: Option<String>) {
     // TODO : allow all users to change username and pw get {username}
-    // TODO : make user upload profile picture here
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("./data/accounts.env");
 
     reload_dotenv();
 }

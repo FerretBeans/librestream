@@ -1,8 +1,14 @@
 pub mod usercreation;
 pub mod metadataedit;
 
-use log::{error, info, LevelFilter};
+use std::{num::NonZeroIsize, path::Path};
+
 use multitag::data::Timestamp;
+use usercreation::*;
+use metadataedit::*;
+
+// use multitag::data::Timestamp; commented because i have to make my own
+use log::{error, info, warn, LevelFilter};
 use serde::Deserialize;
 use serde_json::*;
 use colored::*;
@@ -12,18 +18,17 @@ use futures::TryStreamExt;
 use dotenv;
 use ftail::Ftail;
 
-use usercreation::*;
-use metadataedit::*;
-
-
 // This is for the creation of the objects that allows me to write to the
 // functions easier
-struct metadata<'a> {
-    file: String,
-    title: Option<&'a str>,
-    artist: Option<&'a str>,
-    date: Option<Timestamp>,
-    lyrics: Option<&'a str>
+#[derive(Deserialize)]
+struct Metadata {
+    file: Box<Path>,
+    title: Option<String>,
+    artist: Option<String>,
+    lyrics: Option<String>,
+    year: Option<i32>,
+    month: Option<u8>,
+    day: Option<u8>,
 }
 
 #[derive(Deserialize)]
@@ -60,8 +65,8 @@ async fn main() {
     let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
     let getport: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json; Read Port");
     let port = &getport["server_port"];
-    let portu64 = port.as_u64().expect("Port must be between 1 - 65535");
-    let portu16 = u16::try_from(portu64).expect("Couldn't convert to u16");
+    let portu64 = port.as_u64().expect("Port must be between 1 - 65535 / 2147483647");
+    let portu16 = u16::try_from(portu64).expect("Couldn't convert to u16 or you've chosen a number thats bigger than 65535");
 
     //Webui pages
     let blocked = warp::path("data") // Prevents the access of accounts.env
@@ -100,6 +105,11 @@ async fn main() {
         .and(warp::body::json())
         .and_then(user_data);
 
+    let metadataedit = warp::path!("api" / "v1" / "metadata")
+        .and(warp::post())
+        .and(warp::body::json())
+        .and_then(album_options);
+
     //actually allow the sites to be accessed
     let route = blocked
         .or(site)
@@ -110,6 +120,7 @@ async fn main() {
         .or(settingsfile)
         .or(user_creation)
         .or(files)
+        .or(metadataedit)
         .or(api_upload);
 
     info!("Running on port {}", port);
@@ -156,12 +167,12 @@ async fn file_upload(form: FormData) -> std::result::Result<impl Reply, Rejectio
                     file_ending = "opus"
                 }
                 v => {
-                    eprintln!("invalid file type found: {}", v);
+                    error!("invalid file type found: {}", v);
                     return Err(warp::reject());
                 }
             },
             None => {
-                eprintln!("file type could not be determined");
+                error!("file type could not be determined");
                 return Err(warp::reject());
             }
         }
@@ -198,16 +209,14 @@ async fn file_upload(form: FormData) -> std::result::Result<impl Reply, Rejectio
 
 //Create the folder / check every time it is run for satefy c:
 fn check_files() -> std::io::Result<()> {
-    
-
     let settings = json!({
-        "music_dir": "/var/music",
-        "server_port": 3000,
+        "music_dir": "/var/music", // Kinda written for Linux but idrc u can change it urself :3
+        "server_port": 22501,
         "view_without_login": false,
         "listen_without_login": false,
         "require_login": true,
         "upload_require_login": true,
-        "allow_create_user": false,
+        "allow_create_user": true,
     });
 
     //make the json a string to import into a file
@@ -236,13 +245,40 @@ fn check_files() -> std::io::Result<()> {
 
     info!("Data loaded");
 
+    let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
+    let settings: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json");
+
+    let requirelogin = &settings["upload_require_login"];
+    let view_without_login = &settings["view_without_login"];
+
     Ok(())
 }
 
 async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp::Rejection> {
-    create_user(body.un.clone(), body.pw).expect("Failed to create user");
-    let message = format!("User {} has been created", body.un);
-    Ok(warp::reply::with_status(message, warp::http::StatusCode::ACCEPTED))
+    let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
+    let settings: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json");
+
+    let allowusercreate = &settings["allow_create_user"];
+
+    if allowusercreate == true {
+        create_user(body.un.clone(), body.pw).expect("Failed to create user");
+        let message = format!("User {} has been created", body.un);
+        Ok(warp::reply::with_status(message, warp::http::StatusCode::ACCEPTED))
+    } else {
+        Ok(warp::reply::with_status("User creation is disabled".to_string(), warp::http::StatusCode::FORBIDDEN))
+    }
+}
+
+fn check_if_login_required() {
+    let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
+    let settings: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json");
+
+    let requirelogin = &settings["upload_require_login"];
+    if requirelogin == true {
+        
+    } else {
+        
+    }
 }
 
 fn run_dotenv() {
@@ -250,6 +286,71 @@ fn run_dotenv() {
     info!("Loaded the {}", "enviornment file".bright_blue());
 }
 
-fn album_options(data: metadata) {
-    // TODO : do checks for if they are none or not
+async fn album_options(mut data: Metadata) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    let file = data.file.clone();
+
+    if !file.exists() {
+        return Ok(warp::reply::with_status("File is emtpy, how the fuck did you achieve this????", warp::http::StatusCode::BAD_REQUEST));
+    } // Hopefully not used but idk js for safety
+
+
+    if let Some(newartist) = data.artist {
+        data.artist = Some(newartist);
+    } else {
+        data.artist = None;
+    }
+
+    if let Some(newlyrics) = data.lyrics {
+        data.lyrics = Some(newlyrics);
+    } else {
+        data.lyrics = None;
+    }
+
+    if let Some(newtitle) = data.title {
+        data.title = Some(newtitle);
+    } else {
+        data.title = None;
+    }
+
+    if let Some(newyear) = data.year {
+        data.year = Some(newyear);
+    } else {
+        data.title = None;
+    }
+
+    if let Some(newmonth) = data.month {
+        data.month = Some(newmonth);
+    } else {
+        data.title = None;
+    }
+
+    if let Some(newday) = data.day {
+        data.day = Some(newday);
+    } else {
+        data.title = None;
+    }
+
+    let year = data.year.unwrap_or(0);
+    let month = data.month;
+    let day = data.day;
+
+    let date = Timestamp {
+        year,
+        month,
+        day,
+        hour: None,
+        minute: None,
+        second: None,
+    };
+
+    album_metadata(&data.file, data.title, data.artist, Some(date), data.lyrics);
+    Ok(warp::reply::with_status("Edited metadata", warp::http::StatusCode::OK))
+}
+
+fn song_options() {
+
+}
+
+async fn web_session_token() {
+    // TODO : Retrive session token from website and parse it into 
 }
