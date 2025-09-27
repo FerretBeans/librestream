@@ -24,3 +24,4 @@
 24. maybe add lastfm support? idk
 25. discord custom status
 26. create a custom uuid or token upon website open so you cant create a user from the command line
+27. deserialise <picture>

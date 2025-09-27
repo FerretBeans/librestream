@@ -55,8 +55,6 @@ pub fn delete_user(username: String, password: String) {
         .append(true)
         .open("./data/accounts.env");
 
-
-
     reload_dotenv();
 }
 

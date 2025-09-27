@@ -1,9 +1,9 @@
 pub mod usercreation;
 pub mod metadataedit;
 
-use std::{num::NonZeroIsize, path::Path};
+use std::path::Path;
 
-use multitag::data::Timestamp;
+use multitag::{data::{Album, Picture, Timestamp}, Tag};
 use usercreation::*;
 use metadataedit::*;
 
@@ -37,6 +37,12 @@ struct Userdata {
     pw: String,
 }
 
+struct AlbumData { //horrid hacky solution to my problem
+    albumtitle: Option<String>,
+    albumartist: Option<String>,
+    albumcover: Option<Picture>
+}
+
 #[tokio::main]
 async fn main() {
     if std::fs::read_dir("./logs").is_err() {
@@ -57,6 +63,13 @@ async fn main() {
     check_files().expect("Failed to check files");
 
     //USE HERE FOR TESTING FUNCTIONS
+    let data = AlbumData {
+        albumtitle: Some("Test title".to_string()),
+        albumartist: Some("Test Artist".to_string()),
+        albumcover: None,
+    };
+
+    testfunc(data);
 
     //Inject .env file
     run_dotenv();
@@ -210,7 +223,7 @@ async fn file_upload(form: FormData) -> std::result::Result<impl Reply, Rejectio
 //Create the folder / check every time it is run for satefy c:
 fn check_files() -> std::io::Result<()> {
     let settings = json!({
-        "music_dir": "/var/music", // Kinda written for Linux but idrc u can change it urself :3
+        "music_dir": "/var/music",
         "server_port": 22501,
         "view_without_login": false,
         "listen_without_login": false,
@@ -245,12 +258,6 @@ fn check_files() -> std::io::Result<()> {
 
     info!("Data loaded");
 
-    let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
-    let settings: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json");
-
-    let requirelogin = &settings["upload_require_login"];
-    let view_without_login = &settings["view_without_login"];
-
     Ok(())
 }
 
@@ -262,22 +269,11 @@ async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp
 
     if allowusercreate == true {
         create_user(body.un.clone(), body.pw).expect("Failed to create user");
+        info!("A user has been created");
         let message = format!("User {} has been created", body.un);
         Ok(warp::reply::with_status(message, warp::http::StatusCode::ACCEPTED))
     } else {
         Ok(warp::reply::with_status("User creation is disabled".to_string(), warp::http::StatusCode::FORBIDDEN))
-    }
-}
-
-fn check_if_login_required() {
-    let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
-    let settings: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json");
-
-    let requirelogin = &settings["upload_require_login"];
-    if requirelogin == true {
-        
-    } else {
-        
     }
 }
 
@@ -330,7 +326,7 @@ async fn album_options(mut data: Metadata) -> std::result::Result<impl warp::Rep
         data.title = None;
     }
 
-    let year = data.year.unwrap_or(0);
+    let year = data.year.unwrap_or(0000);
     let month = data.month;
     let day = data.day;
 
@@ -343,14 +339,41 @@ async fn album_options(mut data: Metadata) -> std::result::Result<impl warp::Rep
         second: None,
     };
 
-    album_metadata(&data.file, data.title, data.artist, Some(date), data.lyrics);
+    metadata(&data.file, data.title, data.artist, Some(date), data.lyrics);
     Ok(warp::reply::with_status("Edited metadata", warp::http::StatusCode::OK))
-}
-
-fn song_options() {
-
 }
 
 async fn web_session_token() {
     // TODO : Retrive session token from website and parse it into 
+}
+
+fn testfunc(data: AlbumData) {
+    // hacky sol to my problem ig
+    let mut tag = Tag::read_from_path("./test.flac").unwrap();
+
+    let mut tempname = Album {
+        title: data.albumtitle.clone(),
+        artist: data.albumartist.clone(),
+        cover: data.albumcover.clone(),
+    };
+
+    if let Some(newtitle) = data.albumtitle {
+        tempname.artist = Some(newtitle);
+    } else {
+        tempname.artist = None;
+    }
+
+    if let Some(newartist) = data.albumartist {
+        tempname.title = Some(newartist);
+    } else {
+        tempname.title = None;
+    }
+
+    if let Some(newcover) = data.albumcover {
+        tempname.cover = Some(newcover);
+    } else {
+        tempname.cover = None;
+    }
+
+    eprintln!("{:#?}", tempname);
 }
