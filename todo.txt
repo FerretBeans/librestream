@@ -22,6 +22,5 @@
 22. maybe think about making it only writen in code by me :3 (probs wont but itd be funny uwu)
 23. add discord rpc support :/
 24. maybe add lastfm support? idk
-25. discord custom status
-26. create a custom uuid or token upon website open so you cant create a user from the command line
-27. deserialise <picture>
+25. create a custom uuid or token upon website open so you cant create a user from the command line
+26. get image & then convert it into its mime_type & u8 data, put the u8 into a vector and then put that into the thingy
