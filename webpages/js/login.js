@@ -1,21 +1,29 @@
+// Classes :3
+
 // Simple way of getting datafiles bcs i couldnt think of any other way
 
 const ip_address = document.URL.split("/");
 const url = ip_address[0] + "//" + ip_address[2];
 
+function createuser() {
+    // TODO : encyrpt upon sending
+    // TODO : create a user token
+    let usernamedata = document.getElementById("username");
+    let passwordata = document.getElementById("password");
+    
+    let username = usernamedata.value;
+    let password = passwordata.value;
+    let token = ""
 
-function sessiontokengen() {
-    // Temp unless i change my mind
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_";
-    const charsetlength = charset.length;
-
-    let result = '';
-
-    for (let i = 0; i < 40; i++) {
-        result += charset.charAt(Math.floor(Math.random() * charsetlength));
+    if (!username || !password) {
+        alert("missing username or password");
+    } else {
+        fetch(url + "/api/v1/usercreate", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({ "un": username, "pw": password, "token": token}),
+        });
     }
-
-    fetch(url + "/")
 }
-
-sessiontokengen();

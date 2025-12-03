@@ -1,3 +1,3 @@
 ﻿# librestream
 
-lightweight rust music server ig
+the WORST music server thing ever? :3

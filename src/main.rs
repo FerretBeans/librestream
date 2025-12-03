@@ -1,13 +1,12 @@
 pub mod metadataedit;
 pub mod usercreation;
 
-use std::path::Path;
+use std::{path::Path, sync::{Arc, Mutex}, vec};
 
 use metadataedit::*;
 use multitag::data::Timestamp;
 use usercreation::*;
 
-// use multitag::data::Timestamp; commented because i have to make my own
 use colored::*;
 use dotenv;
 use ftail::Ftail;
@@ -16,12 +15,7 @@ use log::{LevelFilter, error, info};
 use multer::bytes::BufMut;
 use serde::Deserialize;
 use serde_json::*;
-use warp::{
-    Filter,
-    filters::multipart::{FormData, Part},
-    reject::Rejection,
-    reply::Reply,
-};
+use warp::{Filter, filters::multipart::{FormData, Part}, reject::Rejection, reply::Reply};
 
 // This is for the creation of the objects that allows me to write to the
 // functions easier
@@ -40,10 +34,20 @@ struct Metadata {
 struct Userdata {
     un: String,
     pw: String,
+    token: String
+}
+
+#[derive(Deserialize)]
+struct Token {
+    token: String
 }
 
 #[tokio::main]
 async fn main() {
+    //anything for other funcs
+    let tokens = Arc::new(Mutex::new(Vec::<String>::new()));
+    let filter = warp::any().map(move || tokens.clone());
+
     if std::fs::read_dir("./logs").is_err() {
         std::fs::DirBuilder::new()
             .create("./logs")
@@ -69,11 +73,9 @@ async fn main() {
     //Inject .env file
     run_dotenv();
 
-    //Get the port the admin wants to use for the server, default is 3000
-    let read_json =
-        std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
-    let getport: Value =
-        serde_json::from_str(&read_json).expect("Failed to read settings.json; Read Port");
+    //Get the port the admin wants to use for the server, default is 22501
+    let read_json = std::fs::read_to_string("./datafiles/settings.json").expect("Failed to read settings.json");
+    let getport: Value = serde_json::from_str(&read_json).expect("Failed to read settings.json; Read Port");
     let port = &getport["server_port"];
     let portu64 = port
         .as_u64()
@@ -91,18 +93,17 @@ async fn main() {
         .and(warp::fs::dir("./webpages"));
 
     let logs = warp::path("logs").and(warp::fs::dir("./logs"));
-
     let settingsfile = warp::path!("data").and(warp::fs::dir("./datafiles/settings.json"));
-
     let site = warp::path::end().and(warp::fs::file("./webpages/index.html"));
-
     let settings = warp::path!("settings").and(warp::fs::file("./webpages/settings.html"));
-
+    
     let blocked_page =
-        warp::path!("disallowed").and(warp::fs::file("./webpages/blocked/blockedpage.html"));
+        warp::path!("disallowed")
+        .and(warp::fs::file("./webpages/blocked/blockedpage.html"));
 
     let login_page =
-        warp::path!("api" / "v1" / "login").and(warp::fs::file("./webpages/login-page.html"));
+        warp::path!("api" / "v1" / "login")
+        .and(warp::fs::file("./webpages/login-page.html"));
 
     let api_upload = warp::path!("api" / "v1" / "upload")
         .and(warp::post())
@@ -124,6 +125,12 @@ async fn main() {
         .and(warp::body::json())
         .and_then(albummetadataedit);
 
+    let token = warp::path!("api" / "v1" / "token")
+        .and(warp::post())
+        .and(warp::body::json())
+        .and(filter)
+        .and_then(web_session_token);
+
     //actually allow the sites to be accessed
     let route = blocked
         .or(site)
@@ -136,6 +143,7 @@ async fn main() {
         .or(files)
         .or(songmetadata)
         .or(albummetadata)
+        .or(token)
         .or(api_upload);
 
     info!("Running on port {}", port);
@@ -143,7 +151,7 @@ async fn main() {
 }
 
 //Upload the file to the server
-//highkey stole this code uh im gonna code my own
+//highkey stole this code uh im gonna code my own at some point
 async fn file_upload(form: FormData) -> std::result::Result<impl Reply, Rejection> {
     // Get the directory where music is to be stored
     let read_json =
@@ -220,7 +228,6 @@ fn check_files() -> std::io::Result<()> {
         "view_without_login": false,
         "listen_without_login": false,
         "require_login": true,
-        "upload_require_login": true,
         "allow_create_user": true,
     });
 
@@ -265,7 +272,7 @@ async fn user_data(body: Userdata) -> std::result::Result<impl warp::Reply, warp
     let allowusercreate = &settings["allow_create_user"];
 
     if allowusercreate == true {
-        create_user(body.un.clone(), body.pw).expect("Failed to create user");
+        create_user(body.un.clone(), body.pw, body.token).expect("Failed to create user");
         info!("A user has been created");
         let message = format!("User {} has been created", body.un);
         Ok(warp::reply::with_status(message,warp::http::StatusCode::ACCEPTED))
@@ -280,24 +287,18 @@ fn run_dotenv() {
 }
 
 async fn songmetadataedit(mut data: Metadata) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    // TODO : cover art
     let path = data.path.clone();
 
     //for individual songs
     if !path.exists() {
-        return Ok(warp::reply::with_status("File is emtpy, how the fuck did you achieve this????",warp::http::StatusCode::BAD_REQUEST));
+        return Ok(warp::reply::with_status("File is emtpy, how the did you achieve this????",warp::http::StatusCode::BAD_REQUEST));
     }
 
     let year = data.year.unwrap_or(0000);
     let month = data.month;
     let day = data.day;
-    let date = Timestamp {
-        year,
-        month,
-        day,
-        hour: None,
-        minute: None,
-        second: None, // here bcs timestamp forces it to be
-    };
+    let date = Timestamp { year, month, day, hour: None, minute: None, second: None };
         
     if let Some(newartist) = data.artist { data.artist = Some(newartist); }
     if let Some(newlyrics) = data.lyrics { data.lyrics = Some(newlyrics); }
@@ -312,6 +313,11 @@ async fn albummetadataedit(mut data: Metadata) -> std::result::Result<impl warp:
     return Ok("0");
 }
 
-async fn web_session_token() {
-    // TODO : Retrive session token from website and make it so those tokens can be used to upload music
+async fn web_session_token(token: Token, vec: Arc<Mutex<Vec<String>>>) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    // TODO : Retrive session token from website and make it so those tokens can or cant be used to upload music
+    let mut tokens = vec.lock().unwrap();
+    tokens.push(token.token.clone());
+    println!("{:?}", tokens);
+
+    Ok(warp::reply::with_status("token accepted", warp::http::StatusCode::OK))
 }

@@ -9,7 +9,7 @@ use std::io::Write;
 
 static CHARSET: &str = "-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_";
 
-pub fn create_user(username: String, password: String) -> io::Result<()> {
+pub fn create_user(username: String, password: String, tokens: String) -> io::Result<()> {
     let id = Uuid::new_v4();
     let api_key = generate(40, CHARSET);
 
@@ -38,6 +38,7 @@ pub fn create_user(username: String, password: String) -> io::Result<()> {
         writeln!(file, "{}PASSWORD={}", username, password)?;
         writeln!(file, "{}ID={}", username, id)?;
         writeln!(file, "{}APIKEY={}", username, api_key)?;
+        writeln!(file, "{}TOKEN={}", username, tokens)?;
         writeln!(file, "{}ISADMIN=FALSE", username)?;
     } else {
         warn!("user {} still exists", username.bright_purple());

@@ -4,7 +4,7 @@ use log::{info, error};
 use multitag::{data::Timestamp, Tag};
 
 //songs
-pub fn songmetadata(file: &Path, songtitle: Option<String>, songartist: Option<String>, date: Option<Timestamp>, lyrics: Option<String>, /*cover: Option<String>*/) {
+pub fn songmetadata(file: &Path, songtitle: Option<String>, songartist: Option<String>, date: Option<Timestamp>, lyrics: Option<String>) {
     // TODO : Get & set cover
 
     let mut tag = Tag::read_from_path(&file).unwrap();
